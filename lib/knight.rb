@@ -1,31 +1,41 @@
 def create_board
-    row = []
-    board = []
-    8.times {|element| row.push(element)}
-    8.times {|element| board.push(row)}
-    return board
+    board = 8.times.map { [0, 1, 2, 3, 4, 5, 6, 7] }
 end
 
 def print_board(board)
-    board.each do |row|
-        print row
+    board.each_with_index do |row, index|
         puts ''
+        print "Row: #{index}:  "
+        print row[0].to_s + " | " + row[1..6].join(" | ") + " | " + row[7].to_s
+        puts ''
+        unless index == 7
+            40.times {print "_"}
+            puts ''
+        end
+        
     end
 end
 
-#lists all possible paths that will lead to our ending goal
-#generates all moves possible from our staring spot
-#goes through and checks if each move is out-of-bounds or has already been played
-#generates a new node in our all_paths tree
-#stops when no spots are available to travel to or when the goal is reached
+#Takes a starting position and an ending position when first called
+#Creates a knight object at the starting position, generates a list
+#of legal moves that don't go out of bounds and have not already been
+#played. Iterating through the list of legal moves, each possible move
+#will recursively call the all_paths function using the move as the starting
+#position. This will continue until the ending position is reached.
+#The history of played moves will be outputted as history.
 
-def all_paths(start, goal, history = [])
-    if start == goal || history.length >= 10
+def all_paths(start, goal, routes = [], history = [])
+    if history.length >= 8
         return
     end
     temp_history = []
     history.each do |choice|
         temp_history.push(choice)
+    end
+    if start == goal
+        temp_history.push(start)
+        routes.push(temp_history)
+        return routes
     end
     current_point = Knight.new(start, goal, temp_history)
     current_point.history.push(start)
@@ -40,16 +50,16 @@ def all_paths(start, goal, history = [])
     legal_moves.keep_if {|spot| !(temp_history.include?(spot))}
     return if legal_moves.empty?
     legal_moves.each do |move|
-        path = self.all_paths(move, goal, temp_history)
+        path = self.all_paths(move, goal, routes, temp_history)
         current_point.possible_paths.push(path)
     end
-    return current_point
+    return routes
 end
 
-def find_shortest_path(goal, tree)
-    return tree.history if tree.start == goal
-    tree.possible_paths.each {|path| self.find_shortest_path(goal, path)}
-end
+#Creates a Knight object that contains a starting position
+#the ending spot, a history of all moves played up until now
+#and a list of legal moves the knight can take that have not
+#already been played
 
 class Knight
     attr_accessor :start, :goal, :history, :possible_paths
@@ -62,9 +72,18 @@ class Knight
     end
 end
 
+#All possible routes from the starting positon to the ending position are generated
+#in an array called sorted_paths. This array is sorted from smallest to largest and
+#the smallest array is designated as the shortest path from start to end
+#All spots in the shortest path will be marked with a full block on a printed chessboard
+#then printed. The full path and the number of moves taken is then printed.
+
 board = create_board
-choice = all_paths([0,0], [2,4])
-puts choice.possible_paths
-#print choice.history
-#puts choice.possible_paths.each {|path| puts path}
+choice = all_paths([0,0], [6,2])
+sorted_paths = choice.sort {|a, b| a.length <=> b.length}
+shortest_path = sorted_paths[0]
+shortest_path.each {|step| board[step[0]][step[1]] = '█'}
+print_board(board)
+puts ''
+puts "You made it in #{sorted_paths[0].length - 1} moves! The shortest path is: #{sorted_paths[0]}"
 
